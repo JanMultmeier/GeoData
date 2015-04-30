@@ -1,0 +1,29 @@
+Nutzung von Geo-Daten mit R
+========================================================
+author: Jan Multmeier
+date: KBV
+`r format(Sys.Date(),"%d.%m.%Y")`
+
+Übersicht
+========================================================
+
+Google APIs liefern z.B. Routen- oder Lokalisationsinformationen. Das package [ggmaps](http://cran.r-project.org/web/packages/ggmap/ggmap.pdf) bietet eine Integration von R und Google APIs, aber nicht immer die passende Metrik.
+Daher schreiben wir diese Funktionen:
+
+- **getDist**: Distanzen bzw. Fahrzeiten zwischen zwei Orten
+- **getGeo**: Geocoding einer Adresse in Längen- und Breitenangaben
+
+
+getDist
+========================================================
+
+```{r}
+summary(cars)
+```
+
+Slide With Plot
+========================================================
+
+```{r, echo=FALSE}
+plot(cars)
+```
