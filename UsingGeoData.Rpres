@@ -6,7 +6,7 @@ date: KBV
 `r format(Sys.Date(),"%d.%m.%Y")`
  
 
-Übersicht 
+Uebersicht 
 ======================================================== 
 transition: rotate
 
@@ -15,16 +15,15 @@ Daher schreiben wir diese Funktionen:
 
 
 - **getDist**: Distanzen bzw. Fahrzeiten zwischen zwei Orten 
-- **getGeo**: Geocoding einer Adresse in Längen- und Breitenangaben 
+- **getGeo**: Geocoding einer Adresse in Laengen- und Breitenangaben 
 
 Google APIs
 =======================================================
 
 API: *application programming interface*
->... ein Programmteil, der von einem Softwaresystem anderen Programmen zur Anbindung an das System zur Verfügung gestellt wird. (Quelle: [Wikipedia](http://de.wikipedia.org/wiki/Programmierschnittstelle))
+>... ein Programmteil, der von einem Softwaresystem anderen Programmen zur Anbindung an das System zur Verfuegung gestellt wird. (Quelle: [Wikipedia](http://de.wikipedia.org/wiki/Programmierschnittstelle))  
 
 Beispiel:
-
 http://maps.googleapis.com/maps/api/distancematrix/output?parameters
 - *output*: `json`, `xml`
 - *parameters*: `origins`, `destinations`, `sensor`, `mode`, `units`
@@ -56,13 +55,13 @@ getDist: Datencheck
 
 ```
     if (data$status=="INVALID_REQUEST") {
-      warning("Ungültige Anfrage")
+      warning("Ungueltige Anfrage")
     }
     if (data$status=="UNKNOWN_ERROR") {
       warning("Unbekannter Fehler - erneut probieren")
     }
     if (data$status=="MAX_ELEMENTS_EXCEEDED") {
-      stop("Anzahl der zulässigen Objekte je Abfrage überschritten")
+      stop("Anzahl der zulaessigen Objekte je Abfrage ueberschritten")
     }
     if (data$status=="OVER_QUERY_LIMIT") {
       stop("Anfragelimit erreicht")
