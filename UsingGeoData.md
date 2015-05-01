@@ -1,10 +1,6 @@
 
-
-
-
-
 ```
 processing file: UsingGeoData.Rpres
-Quitting from lines 2-19 (UsingGeoData.Rpres) 
-Fehler in nchar(input) : ungültige multibyte Zeichenkette 1
+Fehler in file(file, ifelse(append, "a", "w")) : 
+  nicht unterstützte Umwandlung von 'UTF1' nach ''
 ```
