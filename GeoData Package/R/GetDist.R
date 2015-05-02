@@ -1,5 +1,15 @@
-#This function retrieves a route between start and destination from Google Maps and extracts time or distance
-
+#' Retrieves a route between start and destination from Google Maps and extracts time or distance
+#' 
+#' @param from character vector containing an starting address or location
+#' @param to character vector containing an destination address or location
+#' @param modus a character vector indicating the mode of transportation, either "driving", "walking" or "bicycling". Defaults to "driving".
+#' @param get a character vector indicating what to retrieve, "distance" or "duration". Defaults to "distance".
+#' @return a numeric vector with the distance in km, rounded to 1 decimal spaces, or the duration of the trip in h, rounded to two decimal spaces.
+#' @keywords Google API geodata distance duration
+#' @export
+#' @examples
+#' getDist("Bielefeld","Berlin")
+#' getDist("Friedelstr. 10, 12047 Berlin","Weststr. 88, 33615 Bielefeld",modus="walking",get="duration")
 getDist <- function(from,to,modus="driving",get="distance") {
   library(rjson)
   metric <- numeric(length=length(from))
@@ -8,7 +18,7 @@ getDist <- function(from,to,modus="driving",get="distance") {
     data <- fromJSON(file=url)
     
     if (data$status=="INVALID_REQUEST") {
-      warning("Ungültige Anfrage")
+      warning("Ungueltige Anfrage")
       metric[i] <- NA
     }
     
@@ -18,12 +28,12 @@ getDist <- function(from,to,modus="driving",get="distance") {
     }
     
     if (data$status=="MAX_ELEMENTS_EXCEEDED") {
-      stop("Maximale Anzahl von Elementen pro Anfrage überschritten")
+      stop("Maximale Anzahl von Elementen pro Anfrage ueberschritten")
       metric[i] <- NA
     }
 
     if (data$status=="OVER_QUERY_LIMIT") {
-      stop("Maximale Anzahl von Anfragen überschritten")
+      stop("Maximale Anzahl von Anfragen ueberschritten")
       metric[i] <- NA
     }
 

@@ -1,0 +1,8 @@
+Package: GeoData
+Title: Wrangle Google APIs
+Version: 0.0.1
+Authors@R: person("Jan", "Multmeier", , "jan.multmeier@gmail.com", role = c("aut", "cre"))
+Description: Extracts information from Google APIs, such as distance or time between locations or the location of and address 
+Depends: R (>= 3.1.3)
+License: GPL-3
+LazyData: true
