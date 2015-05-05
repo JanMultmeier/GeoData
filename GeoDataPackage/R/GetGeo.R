@@ -1,12 +1,12 @@
-#' Retrieves the geolocation in longitude-latitude-format from Google's Geocoding API
+#' Geocodes a geographical location and returns it latitude and longitude
 #' 
 #' @param addr character vector containing the location to geocode
-#' @return a `data.frame` with two columns, "lat" and "long"
-#' @keywords Google API geodata geocode address
+#' @return a `data.frame´ with `lat` and `lon` as columns
+#' @keywords Google API geodata geocode location
 #' @export
 #' @examples
 #' getGeo("Weststr. 88, 33615 Bielefeld")
-#' getGeo("KBV, Berlin")
+#' getGeo("Berlin, Alexanderplatz")
 
 getGeo <- function(addr){
   require(rjson)
