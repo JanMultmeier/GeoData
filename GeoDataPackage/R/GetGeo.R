@@ -1,7 +1,7 @@
 #' Geocodes a geographical location and returns it latitude and longitude
 #' 
 #' @param addr character vector containing the location to geocode
-#' @return a `data.frame´ with `lat` and `lon` as columns
+#' @return a data.frame with lat and lon as columns
 #' @keywords Google API geodata geocode location
 #' @export
 #' @examples
