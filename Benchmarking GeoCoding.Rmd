@@ -1,0 +1,52 @@
+---
+title: "Vergleich der GeoCoding-Ergebnisse von Google und Datasciencetoolkit.org"
+output: html_document
+---
+# Hintergrund
+Neben [Google](https://developers.google.com/maps/documentation/geocoding/) bietet auch [Datasciencetoolkit.org (dstk)](http://www.datasciencetoolkit.org/developerdocs#googlestylegeocoder) ein GeoCoding-Service an. Google-Anfragen sind auf 2500/Tag beschränkt, haben dafür aber eine valide Datenquelle. Dstk nutzt OpenStreetMap, GeoIQ und Schuyler Erle.
+
+Der unbegrenzte Zugriff auf Geo-Daten über dstk ist ein großer Vorteil beim Kodieren vieler Adressen, allerdings ist die Genauigkeit und die Geschwindigkeit unbekannt.
+
+## Schritt 1: Wir brauchen ein Paket, über welches wir Adressen über google bzw. dstk geokodieren können
+
+```{r}
+require(devtools)
+install_github("JanMultmeier/GeoData/GeoDataPackage")
+library(GeoData)
+```
+
+## Schritt 2: Jetzt brauchen wir Adressen
+
+```{r}
+Hochschulen <- read.delim(file="http://www.hs-kompass2.de/kompass/xml/download/hs_liste.txt",dec=",",encoding="latin1") #Adressen aller Hochschulen in Deutschland
+
+Hochschulen <- Hochschulen[1:20,] #die ersten 100 reichen
+
+Hochschulen$Adresse <- paste0(Hochschulen$Straße,", ",Hochschulen$Postleitzahl..Hausanschrift.," ",Hochschulen$Ort..Hausanschrift.) #führt Straße, Postleitzahl und Ort in einer "Adresse"-Spalte zusammen
+```
+
+## Schritt 3: Geokodieren mit google und dstk
+
+```{r eval=FALSE}
+google <- getGeo(Hochschulen$Adresse,source="google")
+dstk <- getGeo(Hochschulen$Adresse,source="dstk")
+```
+
+## Schritt 4: Vergleich der *Geschwindigkeit*
+
+```{r cache=TRUE, eval=FALSE}
+google.time <- system.time(google <- getGeo(Hochschulen$Adresse,source="google"))
+dkst.time <- system.time(dstk <- getGeo(Hochschulen$Adresse,source="dstk"))
+diff.time <- dstk.time - google.time
+```
+
+Für die `r #nrow(Hochschulen)` Adressen hat die Kodierung über dstk `r #diff.time["elapsed"]`Sekunden bzw. `r #diff.time["elapsed"]/60` Minuten länger gebraucht. Das sind `r #diff.time["elapsed"]/nrow(Hochschulen)` Sekunden pro Anfrage.
+
+## Schritt 5: Vergleich der *Genauigkeit*
+
+```{r cache=TRUE, eval=FALSE}
+require(maptools)
+google.matrix <- matrix(c(google$lon,google$lat,ncol=2,byrow=FALSE))
+dstk.matrix <- matrix(c(dstk$lon,dstk$lat,ncol=2,byrow=FALSE))
+Abweichung <- diag(spDists(google.matrix,dstk.matrix,longlat=TRUE)) #Errechnet Großkreis-Distanzen zwischen den google- und dstk-Geokoordinaten einer Adresse
+```
