@@ -10,7 +10,7 @@
 #' getGeo("Weststr. 88, 33615 Bielefeld")
 #' getGeo("Berlin, Alexanderplatz")
 
-getGeo <- function(source="google",addr,country="Germany"){
+getGeo <- function(addr,source="google",country="Germany"){
   require(rjson)
   results <- data.frame("lat"=numeric(length=length(addr)),"lon"=numeric(length=length(addr)))
   if (source=="google") {
