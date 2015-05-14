@@ -22,39 +22,39 @@ Hochschulen <- read.delim(file="http://www.hs-kompass2.de/kompass/xml/download/h
 
 require(dplyr)
 set.seed(1337)
-Hochschulen <- sample_n(Hochschulen,100) #100 reichen
+Hochschulen <- sample_n(Hochschulen,20) #20 reichen
 
 Hochschulen$Adresse <- paste0(Hochschulen$Straße,", ",Hochschulen$Postleitzahl..Hausanschrift.," ",Hochschulen$Ort..Hausanschrift.) #führt Straße, Postleitzahl und Ort in einer "Adresse"-Spalte zusammen
 ```
 
 ## Schritt 3: Geokodieren mit google und dstk
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 google <- getGeo(Hochschulen$Adresse,source="google")
 dstk <- getGeo(Hochschulen$Adresse,source="dstk")
 ```
 
 ## Schritt 4: Vergleich der *Geschwindigkeit*
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 google.time <- system.time(google <- getGeo(Hochschulen$Adresse,source="google"))
 dkst.web.time <- system.time(dstk <- getGeo(Hochschulen$Adresse,source="dstk"))
 diff.time <- dstk.web.time - google.time
 ```
 
-Für die `r #nrow(Hochschulen)` Adressen hat die Kodierung über dstk `r #diff.time["elapsed"]`Sekunden bzw. `r #diff.time["elapsed"]/60` Minuten länger gebraucht. Das sind `r #diff.time["elapsed"]/nrow(Hochschulen)` Sekunden pro Anfrage.
+Für die `r nrow(Hochschulen)` Adressen hat die Kodierung über dstk `r diff.time["elapsed"]`Sekunden bzw. `r #diff.time["elapsed"]/60` Minuten länger gebraucht. Das sind `r diff.time["elapsed"]/nrow(Hochschulen)` Sekunden pro Anfrage.
 
 Neben der Internet-basierten Geokodierung bietet dstk die Möglichkeit, den Server per vagrant VirtualMachine lokal zu betreiben. Dafür werden ca. 20gb Speicherkapazität benötigt. Mehr Infos [hier](http://www.datasciencetoolkit.org/developerdocs#setup).
 
-```{r cache=TRUE, eval=FALSE}
+```{r cache=TRUE, eval=TRUE}
 dkst.local.time <- system.time(dstk.local <- getGeo(Hochschulen$Adresse,source="dstk",local=TRUE))
 google.dstk.local.diff.time <- dstk.local.time - google.time
 dstk.local.web.diff.time <- dstk.web.time - dstk.local.time
 ```
 
-Die lokale Variante verkürzt die Zeit für die Abfrage der `r #nrow(Hochschulen)` Adressen um `r #dstk.local.web.diff.time["elapsed"]`Sekunden verglichen mit der Internet-basierten Variante. Im Überblick:
+Die lokale Variante verkürzt die Zeit für die Abfrage der `r nrow(Hochschulen)` Adressen um `r #stk.local.web.diff.time["elapsed"]`Sekunden verglichen mit der Internet-basierten Variante. Im Überblick:
 
-```{r echo=FALSE, eval=FALSE}
+```{r echo=FALSE, eval=TRUE}
 require(ggplot2)
 dat <- data.frame(Methode=c("google","dstk (web)","dstk (lokal)"),Zeit=c(google.time,dkst.web.time,dkst.local.time))
 ggplot(data=dat,aes(x=Methode,y=Zeit)) + geom_bar(stat="identity",fill="midnightblue") + ylab("Zeit (Sekunden)")
@@ -62,20 +62,31 @@ ggplot(data=dat,aes(x=Methode,y=Zeit)) + geom_bar(stat="identity",fill="midnight
 
 ## Schritt 5: Vergleich der *Genauigkeit*
 
-```{r cache=TRUE, eval=FALSE}
+```{r cache=TRUE, eval=TRUE}
 require(maptools)
-google.matrix <- matrix(c(google$lon,google$lat,ncol=2,byrow=FALSE))
-dstk.matrix <- matrix(c(dstk$lon,dstk$lat,ncol=2,byrow=FALSE))
+google.matrix <- matrix(c(google$lon,google$lat),ncol=2,byrow=FALSE)
+dstk.matrix <- matrix(c(dstk$lon,dstk$lat),ncol=2,byrow=FALSE)
 Abweichung <- diag(spDists(google.matrix,dstk.matrix,longlat=TRUE)) #Errechnet Großkreis-Distanzen zwischen den google- und dstk-Geokoordinaten einer Adresse
 ```
 
 So verteilen sich die Abweichungen:
 
-```{r echo=FALSE, eval=FALSE}
+```{r echo=FALSE, eval=TRUE}
 hist(Abweichung)
 ```
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 summary(Abweichung)
 ```
 
+Auf einer Karte dargestellt sieht die Übereinstimmung so aus:
+
+```{r cache=TRUE}
+library(ggmap)
+library(geosphere)
+linien <- gcIntermediate(google[,c("lon","lat")],dstk[,c("lon","lat")],500,breakAtDateLine=FALSE,addStartEnd=FALSE,sp=TRUE)
+linien <- fortify(as(linien,"SpatialLinesDataFrame"))
+ggmap(map) + geom_path(data=linien,aes(x=long,y=lat,group=group),col="black") + geom_point(data=google,aes(x=lon,y=lat),color="blue",size=4) + geom_point(data=dstk,aes(x=lon,y=lat),color="red",alpha=0.6,size=4)
+```
+
+Die violetten Punkte zeigen Überlappungen, die blauen Punkte google-Markierungen, rote Punkte die Adressen aus dem dstk. Die meisten Koordinaten passen gut überein, zwei Punkte im Rheinland landen im bei 51, 9 (lat, lon). Der krasseste Ausreißer ist die `r Hochschulen$Hochschulname[16]`, die laut dstk (Koordinaten: `r dstk[16,]`) [hier](https://www.google.de/maps/place/11%C2%B040'00.1%22N+92%C2%B043'59.9%22E/@11.6667,92.7333,17z/data=!3m1!4b1!4m2!3m1!1s0x0:0x0) liegt.
