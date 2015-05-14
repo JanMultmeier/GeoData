@@ -17,10 +17,12 @@ library(GeoData)
 
 ## Schritt 2: Jetzt brauchen wir Adressen
 
-```{r}
+```{r cache=TRUE}
 Hochschulen <- read.delim(file="http://www.hs-kompass2.de/kompass/xml/download/hs_liste.txt",dec=",",encoding="latin1") #Adressen aller Hochschulen in Deutschland
 
-Hochschulen <- Hochschulen[1:20,] #die ersten 100 reichen
+require(dplyr)
+set.seed(1337)
+Hochschulen <- sample_n(Hochschulen,100) #100 reichen
 
 Hochschulen$Adresse <- paste0(Hochschulen$Straße,", ",Hochschulen$Postleitzahl..Hausanschrift.," ",Hochschulen$Ort..Hausanschrift.) #führt Straße, Postleitzahl und Ort in einer "Adresse"-Spalte zusammen
 ```
@@ -34,13 +36,29 @@ dstk <- getGeo(Hochschulen$Adresse,source="dstk")
 
 ## Schritt 4: Vergleich der *Geschwindigkeit*
 
-```{r cache=TRUE, eval=FALSE}
+```{r eval=FALSE}
 google.time <- system.time(google <- getGeo(Hochschulen$Adresse,source="google"))
-dkst.time <- system.time(dstk <- getGeo(Hochschulen$Adresse,source="dstk"))
-diff.time <- dstk.time - google.time
+dkst.web.time <- system.time(dstk <- getGeo(Hochschulen$Adresse,source="dstk"))
+diff.time <- dstk.web.time - google.time
 ```
 
 Für die `r #nrow(Hochschulen)` Adressen hat die Kodierung über dstk `r #diff.time["elapsed"]`Sekunden bzw. `r #diff.time["elapsed"]/60` Minuten länger gebraucht. Das sind `r #diff.time["elapsed"]/nrow(Hochschulen)` Sekunden pro Anfrage.
+
+Neben der Internet-basierten Geokodierung bietet dstk die Möglichkeit, den Server per vagrant VirtualMachine lokal zu betreiben. Dafür werden ca. 20gb Speicherkapazität benötigt. Mehr Infos [hier](http://www.datasciencetoolkit.org/developerdocs#setup).
+
+```{r cache=TRUE, eval=FALSE}
+dkst.local.time <- system.time(dstk.local <- getGeo(Hochschulen$Adresse,source="dstk",local=TRUE))
+google.dstk.local.diff.time <- dstk.local.time - google.time
+dstk.local.web.diff.time <- dstk.web.time - dstk.local.time
+```
+
+Die lokale Variante verkürzt die Zeit für die Abfrage der `r #nrow(Hochschulen)` Adressen um `r #dstk.local.web.diff.time["elapsed"]`Sekunden verglichen mit der Internet-basierten Variante. Im Überblick:
+
+```{r echo=FALSE, eval=FALSE}
+require(ggplot2)
+dat <- data.frame(Methode=c("google","dstk (web)","dstk (lokal)"),Zeit=c(google.time,dkst.web.time,dkst.local.time))
+ggplot(data=dat,aes(x=Methode,y=Zeit)) + geom_bar(stat="identity",fill="midnightblue") + ylab("Zeit (Sekunden)")
+```
 
 ## Schritt 5: Vergleich der *Genauigkeit*
 
@@ -50,3 +68,14 @@ google.matrix <- matrix(c(google$lon,google$lat,ncol=2,byrow=FALSE))
 dstk.matrix <- matrix(c(dstk$lon,dstk$lat,ncol=2,byrow=FALSE))
 Abweichung <- diag(spDists(google.matrix,dstk.matrix,longlat=TRUE)) #Errechnet Großkreis-Distanzen zwischen den google- und dstk-Geokoordinaten einer Adresse
 ```
+
+So verteilen sich die Abweichungen:
+
+```{r echo=FALSE, eval=FALSE}
+hist(Abweichung)
+```
+
+```{r, eval=FALSE}
+summary(Abweichung)
+```
+

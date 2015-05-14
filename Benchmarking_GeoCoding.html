@@ -76,7 +76,7 @@ img {
 <pre><code>## Downloading github repo JanMultmeier/GeoData@master
 ## Installing GeoData
 ## '/Library/Frameworks/R.framework/Resources/bin/R' --vanilla CMD INSTALL  \
-##   '/private/var/folders/r7/fdxk__q5675g2s5hbxm5hsk80000gn/T/RtmpzX4aiK/devtoolsf214aa07ef0/JanMultmeier-GeoData-377f54c/GeoDataPackage'  \
+##   '/private/var/folders/r7/fdxk__q5675g2s5hbxm5hsk80000gn/T/Rtmp1VecHm/devtools208069ff3016/JanMultmeier-GeoData-9e6ce0a/GeoDataPackage'  \
 ##   --library='/Library/Frameworks/R.framework/Versions/3.1/Resources/library'  \
 ##   --install-tests</code></pre>
 <pre class="r"><code>library(GeoData)</code></pre>
@@ -85,7 +85,20 @@ img {
 <h2>Schritt 2: Jetzt brauchen wir Adressen</h2>
 <pre class="r"><code>Hochschulen &lt;- read.delim(file=&quot;http://www.hs-kompass2.de/kompass/xml/download/hs_liste.txt&quot;,dec=&quot;,&quot;,encoding=&quot;latin1&quot;) #Adressen aller Hochschulen in Deutschland
 
-Hochschulen &lt;- Hochschulen[1:20,] #die ersten 100 reichen
+require(dplyr)</code></pre>
+<pre><code>## Loading required package: dplyr
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>set.seed(1337)
+Hochschulen &lt;- sample_n(Hochschulen,100) #100 reichen
 
 Hochschulen$Adresse &lt;- paste0(Hochschulen$Straße,&quot;, &quot;,Hochschulen$Postleitzahl..Hausanschrift.,&quot; &quot;,Hochschulen$Ort..Hausanschrift.)#führt Straße, Postleitzahl und Ort in einer &quot;Adresse&quot;-Spalte zusammen</code></pre>
 </div>
@@ -97,9 +110,14 @@ dstk &lt;- getGeo(Hochschulen$Adresse,source=&quot;dstk&quot;)</code></pre>
 <div id="schritt-4-vergleich-der-geschwindigkeit" class="section level2">
 <h2>Schritt 4: Vergleich der <em>Geschwindigkeit</em></h2>
 <pre class="r"><code>google.time &lt;- system.time(google &lt;- getGeo(Hochschulen$Adresse,source=&quot;google&quot;))
-dkst.time &lt;- system.time(dstk &lt;- getGeo(Hochschulen$Adresse,source=&quot;dstk&quot;))
-diff.time &lt;- dstk.time - google.time</code></pre>
+dkst.web.time &lt;- system.time(dstk &lt;- getGeo(Hochschulen$Adresse,source=&quot;dstk&quot;))
+diff.time &lt;- dstk.web.time - google.time</code></pre>
 <p>Für die Adressen hat die Kodierung über dstk Sekunden bzw. Minuten länger gebraucht. Das sind Sekunden pro Anfrage.</p>
+<p>Neben der Internet-basierten Geokodierung bietet dstk die Möglichkeit, den Server per vagrant VirtualMachine lokal zu betreiben. Dafür werden ca. 20gb Speicherkapazität benötigt. Mehr Infos <a href="http://www.datasciencetoolkit.org/developerdocs#setup">hier</a>.</p>
+<pre class="r"><code>dkst.local.time &lt;- system.time(dstk.local &lt;- getGeo(Hochschulen$Adresse,source=&quot;dstk&quot;,local=TRUE))
+google.dstk.local.diff.time &lt;- dstk.local.time - google.time
+dstk.local.web.diff.time &lt;- dstk.web.time - dstk.local.time</code></pre>
+<p>Die lokale Variante verkürzt die Zeit für die Abfrage der Adressen um Sekunden verglichen mit der Internet-basierten Variante. Im Überblick:</p>
 </div>
 <div id="schritt-5-vergleich-der-genauigkeit" class="section level2">
 <h2>Schritt 5: Vergleich der <em>Genauigkeit</em></h2>
@@ -107,6 +125,8 @@ diff.time &lt;- dstk.time - google.time</code></pre>
 google.matrix &lt;- matrix(c(google$lon,google$lat,ncol=2,byrow=FALSE))
 dstk.matrix &lt;- matrix(c(dstk$lon,dstk$lat,ncol=2,byrow=FALSE))
 Abweichung &lt;- diag(spDists(google.matrix,dstk.matrix,longlat=TRUE)) #Errechnet Großkreis-Distanzen zwischen den google- und dstk-Geokoordinaten einer Adresse</code></pre>
+<p>So verteilen sich die Abweichungen:</p>
+<pre class="r"><code>summary(Abweichung)</code></pre>
 </div>
 </div>
 
