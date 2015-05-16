@@ -1,13 +1,15 @@
 ---
-title: "Vergleich der GeoCoding-Ergebnisse von Google und Datasciencetoolkit.org"
+title: "Vergleich der GeoCoding-Ergebnisse von Google, Datasciencetoolkit.org und ArcGis"
 output: html_document
 ---
 # Hintergrund
-Neben [Google](https://developers.google.com/maps/documentation/geocoding/) bietet auch [Datasciencetoolkit.org (dstk)](http://www.datasciencetoolkit.org/developerdocs#googlestylegeocoder) ein GeoCoding-Service an. Google-Anfragen sind auf 2500/Tag beschränkt, haben dafür aber eine valide Datenquelle. Dstk nutzt OpenStreetMap, GeoIQ und Schuyler Erle.
+Neben [Google](https://developers.google.com/maps/documentation/geocoding/) bietet auch [Datasciencetoolkit.org (dstk)](http://www.datasciencetoolkit.org/developerdocs#googlestylegeocoder) ein GeoCoding-Service an. Google-Anfragen sind auf 2500/Tag beschränkt, haben dafür aber eine valide Datenquelle.
+Dstk nutzt OpenStreetMap, GeoIQ und Schuyler Erle. Neben der Internet-basierten Geokodierung bietet dstk die Möglichkeit, den Server per vagrant VirtualMachine lokal zu betreiben. Dafür werden ca. 20gb Speicherkapazität benötigt. Mehr Infos [hier](http://www.datasciencetoolkit.org/developerdocs#setup).
+Esri bietet über [ArcGis](https://developers.arcgis.com/rest/geocode/api-reference/geocoding-find.htm) ebenfalls eine API an, mit der Adressen geocodiert werden können.
 
-Der unbegrenzte Zugriff auf Geo-Daten über dstk ist ein großer Vorteil beim Kodieren vieler Adressen, allerdings ist die Genauigkeit und die Geschwindigkeit unbekannt.
+Der unbegrenzte Zugriff auf Geo-Daten über dstk ist ein großer Vorteil beim Kodieren vieler Adressen, allerdings ist die Genauigkeit und die Geschwindigkeit unbekannt. Können dstk und ArcGis mit Google mithalten?
 
-## Schritt 1: Wir brauchen ein Paket, über welches wir Adressen über google bzw. dstk geokodieren können
+## Schritt 1: Wir brauchen ein Paket, über welches wir Adressen mit den vorgestellten Quellen geokodieren können
 
 ```{r}
 require(devtools)
@@ -22,71 +24,86 @@ Hochschulen <- read.delim(file="http://www.hs-kompass2.de/kompass/xml/download/h
 
 require(dplyr)
 set.seed(1337)
-Hochschulen <- sample_n(Hochschulen,20) #20 reichen
+Hochschulen <- sample_n(Hochschulen,100) #100 reichen
 
 Hochschulen$Adresse <- paste0(Hochschulen$Straße,", ",Hochschulen$Postleitzahl..Hausanschrift.," ",Hochschulen$Ort..Hausanschrift.) #führt Straße, Postleitzahl und Ort in einer "Adresse"-Spalte zusammen
 ```
 
-## Schritt 3: Geokodieren mit google und dstk
+## Schritt 3: Geokodieren mit google, dstk und ArcGis
 
-```{r eval=TRUE}
+```{r eval=FALSE}
 google <- getGeo(Hochschulen$Adresse,source="google")
-dstk <- getGeo(Hochschulen$Adresse,source="dstk")
+dstk.web <- getGeo(Hochschulen$Adresse,source="dstk")
+arcgis <- getGeo(Hochschulen$Adresse,source="arcgis")
 ```
 
 ## Schritt 4: Vergleich der *Geschwindigkeit*
 
-```{r eval=TRUE}
+```{r eval=TRUE, cache=TRUE}
 google.time <- system.time(google <- getGeo(Hochschulen$Adresse,source="google"))
-dkst.web.time <- system.time(dstk <- getGeo(Hochschulen$Adresse,source="dstk"))
-diff.time <- dstk.web.time - google.time
-```
-
-Für die `r nrow(Hochschulen)` Adressen hat die Kodierung über dstk `r diff.time["elapsed"]`Sekunden bzw. `r #diff.time["elapsed"]/60` Minuten länger gebraucht. Das sind `r diff.time["elapsed"]/nrow(Hochschulen)` Sekunden pro Anfrage.
-
-Neben der Internet-basierten Geokodierung bietet dstk die Möglichkeit, den Server per vagrant VirtualMachine lokal zu betreiben. Dafür werden ca. 20gb Speicherkapazität benötigt. Mehr Infos [hier](http://www.datasciencetoolkit.org/developerdocs#setup).
-
-```{r cache=TRUE, eval=TRUE}
-dkst.local.time <- system.time(dstk.local <- getGeo(Hochschulen$Adresse,source="dstk",local=TRUE))
-google.dstk.local.diff.time <- dstk.local.time - google.time
+dstk.web.time <- system.time(dstk.web <- getGeo(Hochschulen$Adresse,source="dstk",local=FALSE))
+dstk.local.time <- system.time(dstk.local <- getGeo(Hochschulen$Adresse,source="dstk",local=TRUE)) #requires a powered up vagrant vm
+arcgis.time <- system.time(arcgis <- getGeo(Hochschulen$Adresse,source="arcgis"))
+diff.time1 <- dstk.web.time - google.time
+diff.time2 <- dstk.web.time - arcgis.time
 dstk.local.web.diff.time <- dstk.web.time - dstk.local.time
 ```
 
-Die lokale Variante verkürzt die Zeit für die Abfrage der `r nrow(Hochschulen)` Adressen um `r #stk.local.web.diff.time["elapsed"]`Sekunden verglichen mit der Internet-basierten Variante. Im Überblick:
+Die lokale Variante verkürzt die Zeit für die Abfrage der `r nrow(Hochschulen)` Adressen um `r dstk.local.web.diff.time["elapsed"]` Sekunden verglichen mit der Internet-basierten Variante. Im Überblick:
+
+```{r echo=FALSE}
+table <- rbind(summary(google.time),summary(dstk.web.time),summary(dstk.local.time),summary(arcgis.time))
+row.names(table) <- c("google","dstk (web","dstk (lokal)","ArcGis")
+table
+```
+
+Für die `r nrow(Hochschulen)` Adressen hat die Kodierung über dstk (web) `r diff.time1["elapsed"]` Sekunden länger gebraucht als google, und `r difftime2["elapsed"]` Sekunden länger als ArcGis. 
 
 ```{r echo=FALSE, eval=TRUE}
 require(ggplot2)
-dat <- data.frame(Methode=c("google","dstk (web)","dstk (lokal)"),Zeit=c(google.time,dkst.web.time,dkst.local.time))
+dat <- data.frame(Methode=c("google","dstk (web)","dstk (lokal)","ArcGis"),Zeit=c(google.time,dkst.web.time,dkst.local.time,arcgis))
 ggplot(data=dat,aes(x=Methode,y=Zeit)) + geom_bar(stat="identity",fill="midnightblue") + ylab("Zeit (Sekunden)")
 ```
 
+Damit benötigt google `r google.time/nrow(Hochschulen)` Sekunden pro Element, dstk (web) `r dstk.web.time/nrow(Hochschulen)` Sekunden, die lokale Version des dstk `r dstk.lokal.time/nrow(Hochschulen)` Sekunden, und ArcGis `r google.time/nrow(Hochschulen)` Sekunden pro Element.
+
 ## Schritt 5: Vergleich der *Genauigkeit*
+
+Nehmen wir an, google ist der Goldstandard für Geokodierung. Wie weit liegen die Ergebnisse der anderen Methoden von den per google ermittelten Koordinaten entfernt?
 
 ```{r cache=TRUE, eval=TRUE}
 require(maptools)
 google.matrix <- matrix(c(google$lon,google$lat),ncol=2,byrow=FALSE)
-dstk.matrix <- matrix(c(dstk$lon,dstk$lat),ncol=2,byrow=FALSE)
-Abweichung <- diag(spDists(google.matrix,dstk.matrix,longlat=TRUE)) #Errechnet Großkreis-Distanzen zwischen den google- und dstk-Geokoordinaten einer Adresse
+esri.matrix <- matrix(c(esri$lon,esri$lat),ncol=2,byrow=FALSE)
+dstk.web.matrix <- matrix(c(dstk$lon,dstk$lat),ncol=2,byrow=FALSE)
+dstk.local.matrix <- matrix(c(dstk.local$lon,dstk.local$lat),ncol=2,byrow=FALSE)
+Abweichung1 <- diag(spDists(google.matrix,dstk.matrix,longlat=TRUE)) #Errechnet Großkreis-Distanzen zwischen den google- und esri-Geokoordinaten einer Adresse
+Abweichung2 <- diag(spDists(google.matrix,dstk.web.matrix,longlat=TRUE))
+Abweichung3 <- diag(spDists(google.matrix,dstk.local.matrix,longlat=TRUE))
+Abweichung4 <- diag(spDists(google.matrix,dstk.web.matrix,longlat=TRUE))
 ```
 
 So verteilen sich die Abweichungen:
 
 ```{r echo=FALSE, eval=TRUE}
-hist(Abweichung)
+require(ggplot2)
+Abweichungen <- data.frame(Methode=c("google","dstk (web)","dstk (lokal)","ArcGis"),rbind(Abweichung1,Abweichung2,Abweichung3,Abweichung4))
+ggplot(Abweichung1,aes(Abweichung),stat="bin") + geom_histogram(binwidth=0.1) + labs(y="Anzahl Punkte",x="Abweichung in km")
 ```
 
 ```{r, eval=TRUE}
 summary(Abweichung)
 ```
 
-Auf einer Karte dargestellt sieht die Übereinstimmung so aus:
+Auf der Karte sieht die Übereinstimmung so aus:
 
 ```{r cache=TRUE}
 library(ggmap)
 library(geosphere)
 linien <- gcIntermediate(google[,c("lon","lat")],dstk[,c("lon","lat")],500,breakAtDateLine=FALSE,addStartEnd=FALSE,sp=TRUE)
 linien <- fortify(as(linien,"SpatialLinesDataFrame"))
+map <- get_map(location=c(10.4541194, 51.1641175),zoom=6,maptype="terrain")
 ggmap(map) + geom_path(data=linien,aes(x=long,y=lat,group=group),col="black") + geom_point(data=google,aes(x=lon,y=lat),color="blue",size=4) + geom_point(data=dstk,aes(x=lon,y=lat),color="red",alpha=0.6,size=4)
 ```
 
-Die violetten Punkte zeigen Überlappungen, die blauen Punkte google-Markierungen, rote Punkte die Adressen aus dem dstk. Die meisten Koordinaten passen gut überein, zwei Punkte im Rheinland landen im bei 51, 9 (lat, lon). Der krasseste Ausreißer ist die `r Hochschulen$Hochschulname[16]`, die laut dstk (Koordinaten: `r dstk[16,]`) [hier](https://www.google.de/maps/place/11%C2%B040'00.1%22N+92%C2%B043'59.9%22E/@11.6667,92.7333,17z/data=!3m1!4b1!4m2!3m1!1s0x0:0x0) liegt.
+Die violetten Punkte zeigen Überlappungen, die blauen Punkte google-Markierungen, rote Punkte die Adressen aus dem dstk. Die meisten Koordinaten passen gut überein, zwei Punkte im Rheinland landen im bei 51, 9 (lat, lon). Der krasseste Ausreißer ist die `r Hochschulen$Hochschulname[16]`, die laut dstk (Koordinaten: `r #dstk[16,]`) [hier](https://www.google.de/maps/place/11%C2%B040'00.1%22N+92%C2%B043'59.9%22E/@11.6667,92.7333,17z/data=!3m1!4b1!4m2!3m1!1s0x0:0x0) liegt.
