@@ -89,7 +89,6 @@ getGeo <- function (addr, source = "google", local = FALSE, country = "Germany")
   }
   if (source == "arcgis") {
     for (i in seq_along(addr)) {
-      print(i)
       url <- paste0("http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/find?text=",
                     gsub(" ", "+", addr[i]), "&f=json")
       data <- fromJSON(file = url)
