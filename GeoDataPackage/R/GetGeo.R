@@ -12,10 +12,13 @@
 #' getGeo("Berlin, Alexanderplatz")
 #' getGeo("4308 Lookout Rd, 23455 Virginia Beach, VA",source="dstk",country="USA")
 
-getGeo <- function (addr, source = "google", local = FALSE, country = "Germany")
+getGeo <- function (addr, source = "google", local = FALSE, country = "Germany", key)
 {
   if ((source %in% c("google", "dstk", "arcgis")) == FALSE) {
-    stop("Unbekanntes 'source'-Argument: google, dstk oder arcgis sind erlaubt")
+    stop("Unknown 'source' argument: permitted values are 'google', 'dstk' oder 'arcgis'")
+  }
+  if (missing(key)) {
+    stop("Please provide an API key")
   }
   require(rjson)
   results <- data.frame(lat = numeric(length = length(addr)),
@@ -35,7 +38,7 @@ getGeo <- function (addr, source = "google", local = FALSE, country = "Germany")
           success <- TRUE
         }
         if (data$status == "ZERO_RESULTS") {
-          warning("Keine Ergebnisse gefunden!")
+          warning("No results found!")
           results$lat[i] <- NA
           results$lon[i] <- NA
           success <- TRUE
@@ -44,7 +47,7 @@ getGeo <- function (addr, source = "google", local = FALSE, country = "Germany")
           Sys.sleep(2)
         }
         if (attempts == 3) {
-          stop("Abfragelimit erreicht")
+          stop("Query limit reached")
         }
       }
     }
@@ -74,13 +77,13 @@ getGeo <- function (addr, source = "google", local = FALSE, country = "Germany")
           success <- TRUE
         }
         if (data$status == "ZERO_RESULTS") {
-          warning("Keine Ergebnisse gefunden!")
+          warning("No results found!")
           results$lat[i] <- NA
           results$lon[i] <- NA
           success <- TRUE
         }
         if (attempts == 100) {
-          warning("Maximale Iterationen erreicht")
+          warning("Maximal number of iteratios reached")
           results$lat[i] <- NA
           results$lon[i] <- NA
         }
