@@ -4,12 +4,13 @@
 #' @param source either "google" (default) to retriece data from the google maps API, "dstk" for datasciencetoolkit.org, or "arcgis" to use ArcGis by Esri
 #' @param local boolean. If TRUE, retrieves values from local machine when using dstk as a source, FALSE connects to datasciencetoolkit.org (default)
 #' @param country needed if source="dstk" to avoid empty results. Defaults to "Germany".
+#' @param key API-key for google maps geocoding API (required for geolocation with google API)
 #' @return a data.frame with columns lat and lon
 #' @keywords Google dstk arcgis API geodata geocode location address
 #' @export
 #' @examples
-#' getGeo("Weststr. 88, 33615 Bielefeld")
-#' getGeo("Berlin, Alexanderplatz")
+#' getGeo("Weststr. 88, 33615 Bielefeld",key=YOUR_API_KEY)
+#' getGeo("Berlin, Alexanderplatz",key=YOUR_API_KEY)
 #' getGeo("4308 Lookout Rd, 23455 Virginia Beach, VA",source="dstk",country="USA")
 
 getGeo <- function (addr, source = "google", local = FALSE, country = "Germany", key)
