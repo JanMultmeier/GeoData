@@ -28,7 +28,7 @@ getGeo <- function (addr, source = "google", local = FALSE, country = "Germany",
     for (i in seq_along(addr)) {
       success <- FALSE
       attempts <- 0
-      while (success == FALSE & attempts < 3) {
+      while (success == FALSE & attempts < 10) {
         attempts <- attempts + 1
         url <- paste0("http://maps.googleapis.com/maps/api/geocode/json?address=",
                       gsub(" ", "+", addr[i]), "&sensor=false")
@@ -47,7 +47,7 @@ getGeo <- function (addr, source = "google", local = FALSE, country = "Germany",
         if (data$status == "OVER_QUERY_LIMIT") {
           Sys.sleep(2)
         }
-        if (attempts == 3) {
+        if (attempts > 9) {
           stop("Query limit reached")
         }
       }
